@@ -1,0 +1,16 @@
+extends layout
+
+block content
+    p= error
+    p= message
+    if error=404
+        a(href="/")= host
+block head
+    style.
+        .content {
+            font-size:x-large;font-weight:bold;
+            align-content:center;text-align:center
+        }
+        a {
+            font-size:large
+        }

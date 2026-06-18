@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+	<head>
+		<title>paste</title>
+
+		<script src="/js/main.js"></script>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght,MONO@0,300..800,1;1,300..800,1&display=swap"
+			rel="stylesheet"
+		/>
+	</head>
+	<body>
+		<!-- <header>yea</header> -->
+		<main>
+			<div class="content">
+				<h1 class="information">generic temporary text pastebin</h1>
+				<div class="user" id="bin">
+					<textarea id="input" placeholder="text"></textarea>
+					<div class="user-btm">
+						<span class="charcount"><span id="currentChars">0</span>/8000</span>
+						<button
+							class="submit"
+							type="submit"
+							disabled
+							onclick="submitPaste(document.getElementById('input').value)"
+						>
+							submit
+						</button>
+					</div>
+				</div>
+				<div class="information">
+					<p>submissions are automatically deleted after 24 hours</p>
+				</div>
+			</div>
+		</main>
+		<footer id="footer">
+			<p>future github link</p>
+		</footer>
+	</body>
+	<link rel="stylesheet" href="/stylesheets/style.css" />
+</html>

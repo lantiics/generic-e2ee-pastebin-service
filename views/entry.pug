@@ -1,0 +1,12 @@
+extends layout
+
+block content
+    div.user
+        div.information.date= date
+        p.text= content
+    div(style="width:100%;text-align:center;margin-top:2rem;")
+        p.information
+            span this message expires after 24 hours
+            br
+            a(href="/") make your own message
+            
