@@ -20,7 +20,9 @@ app.listen(port, () => {
 });
 
 // setup
-const maxContent = 8000;
+
+// multiplying maxcontent to get regular text content to be, hopefully, as close to the maximum. this is only temporary, i intend on ensuring using some other algorithm.
+const maxContent = 8000 * (4 / 3);
 const db = new Database("./bin.db");
 
 db.exec(
@@ -106,18 +108,19 @@ app.get("/p/:identifier", async (req, res, next) => {
 			" " +
 			new Date(Math.floor(data.epoch)).getUTCFullYear() +
 			" UTC";
+		// add deletion function
 		return res.render("entry");
 	}
 	return next();
 });
 
-// expiration
+// expiration - all entries expire after 3 hours
 
 setInterval(clearExpired, 15 * 1000);
 
 async function clearExpired() {
 	db.prepare(
-		`DELETE FROM entries WHERE ((epoch - ${Date.now()})/(1*1000*60*60*24))`,
+		`DELETE FROM entries WHERE ((epoch - ${Date.now()})/(1*1000*60*60*3))`,
 	);
 }
 

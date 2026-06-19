@@ -190,3 +190,7 @@ button {
 		justify-self: right;
 	}
 }
+
+fieldset input {
+	margin: auto;
+}

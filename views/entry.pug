@@ -1,12 +1,19 @@
 extends layout
 
+block head
+    script(src="/js/view.js")
+    style.
+        .text {
+            display:none;
+        }
+
 block content
     div.user
         div.information.date= date
-        p.text= content
+        p.text#text= content
     div(style="width:100%;text-align:center;margin-top:2rem;")
         p.information
-            span this message expires after 24 hours
+            span this message expires after 3 hours
             br
             a(href="/") make your own message
             
