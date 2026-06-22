@@ -9,8 +9,13 @@ app.set("view engine", "pug");
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 var createError = require("http-errors");
+const limiter = rateLimit({
+	windowMs: 1 * 60 * 1000, // 1 minute
+	limit: 3,
+});
 
 const helmet = require("helmet");
+const { rateLimit } = require("express-rate-limit");
 app.use(helmet());
 
 // disable if not behind cloudflare or some funky thing
@@ -39,7 +44,7 @@ console.log("database initialized");
 
 // submission logic
 
-app.put("/submit", async (req, res, next) => {
+app.put("/submit", limiter, async (req, res, next) => {
 	try {
 		const content = req.body.content.data ?? null;
 		if (content) {
