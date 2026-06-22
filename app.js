@@ -9,13 +9,14 @@ app.set("view engine", "pug");
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 var createError = require("http-errors");
+const { rateLimit } = require("express-rate-limit");
+
 const limiter = rateLimit({
 	windowMs: 1 * 60 * 1000, // 1 minute
 	limit: 3,
 });
 
 const helmet = require("helmet");
-const { rateLimit } = require("express-rate-limit");
 app.use(helmet());
 
 // disable if not behind cloudflare or some funky thing
