@@ -1,19 +1,44 @@
 extends layout
 
 block head
-    script(src="/js/view.js")
-    style.
-        .text {
-            display:none;
-        }
+    script(src="/js/view.js" type="module")
+    script(src="/js/main.js" type="module")
+    title encrypted message
+    meta(property="og:title" content="encrypted paste from "+date)
+    
+    meta(name="data" content=content)
+    meta(name="data_iv",content=content_iv)
+    if password
+        meta(name="pw", content=password)
+        meta(name="psw_salt", content=psw_salt)
+        meta(name="psw_iv", content=psw_iv)
+        
+        meta(name="data" content= data)
+
+
+
+block body
+    if password
+        div#popup-container.popup-container.pp
+            div#popup.popup.pp
+                span this paste is password protected
+                if oneTimeUse
+                    span(style="font-size:x-small") this message has now been removed from our servers, if you refresh the page you will be unable to retrieve it
+                input#password(placeholder="password" type="password")
+                div.popup-btm.pp
+                    button.submit#pw-submit submit
 
 block content
+
     div.user
         div.information.date= date
-        p.text#text= content
+        p.text#text= "decrypting..."
     div(style="width:100%;text-align:center;margin-top:2rem;")
         p.information
-            span this message expires after 3 hours
+            if !oneTimeUse
+                span this message expires in #{expires}
+            else
+                span this message has now been deleted
             br
             a(href="/") make your own message
             

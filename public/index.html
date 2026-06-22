@@ -3,8 +3,10 @@
 	<head>
 		<title>paste</title>
 
-		<script src="/js/main.js"></script>
+		<script type="module" src="/js/main.js"></script>
+		<script type="module" src="/js/sub.js"></script>
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<meta name="viewport" , content="width=device-width" ,initial-scale="1" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 		<link
 			href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:ital,wght,MONO@0,300..800,1;1,300..800,1&display=swap"
@@ -12,6 +14,20 @@
 		/>
 	</head>
 	<body>
+		<div id="popup-container" class="popup-container" style="display: none">
+			<div id="popup" class="popup">
+				<span>create a password</span>
+				<input id="password" placeholder="password" type="password" /><input
+					id="confirm-password"
+					placeholder="confirm password"
+					type="password"
+				/>
+				<div class="popup-btm">
+					<button id="pw-cancel">cancel</button>
+					<button class="submit" id="pw-submit">submit</button>
+				</div>
+			</div>
+		</div>
 		<!-- <header>yea</header> -->
 		<main>
 			<div class="content">
@@ -20,24 +36,32 @@
 					<textarea id="input" placeholder="text"></textarea>
 					<div class="user-btm">
 						<span class="charcount"><span id="currentChars">0</span>/8000</span>
-
-						<button
-							class="submit"
-							type="submit"
-							disabled
-							onclick="submitPaste(document.getElementById('input').value)"
-						>
+						<button id="pwbtn" class="switch">password protect</button>
+						<button id="delv" class="switch">delete upon view</button>
+						<button class="submit" type="submit" id="usr-submit" disabled>
 							submit
 						</button>
 					</div>
+					<div class="usr-btm"></div>
 				</div>
 				<div class="information">
-					<p>submissions are automatically deleted after 3 hours</p>
+					<p>
+						submissions are only stored encrypted and expire after 3 hours<br /><br /><code
+							>the server receieves encrypted data. decryption information is
+							appended to the url after a hash (#), which prevents it from being
+							sent to the server. decryption information is then decoded and
+							used to locally decrypt the message. javascript is required for
+							this to work.</code
+						>
+					</p>
 				</div>
 			</div>
 		</main>
 		<footer id="footer">
-			<p>future github link</p>
+			<a
+				href="https://gitgud.io/lantics/generic-temporary-pastebin/-/tree/e02998d477f38cca014511cba0f90503fb5a8e63/"
+				>view on gitgud.io</a
+			>
 		</footer>
 	</body>
 	<link rel="stylesheet" href="/stylesheets/style.css" />

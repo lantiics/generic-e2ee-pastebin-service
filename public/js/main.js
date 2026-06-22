@@ -1,146 +1,165 @@
-const maxContent = 8000;
-
-document.addEventListener("DOMContentLoaded", () => {
-	const userElem = document.querySelector(".user");
-	const userInput = document.getElementById("input");
-	userInput.addEventListener("focusin", () => {
-		userElem.style.borderColor = "#ffffff";
-	});
-	userInput.addEventListener("focusout", () => {
-		userElem.removeAttribute("style");
-	});
-	userInput.addEventListener("input", (event) => {
-		updateText(event);
-	});
-});
-
-function updateText(event) {
-	const userInput = document.getElementById("input");
-	const curScroll = window.scrollY;
-	userInput.style.height = "auto";
-	userInput.style.height = userInput.scrollHeight + "px";
-	window.scroll(null, curScroll);
-	const charSpan = document.getElementById("currentChars");
-	const charElem = document.querySelector(".charcount");
-	const charCount = userInput.value.length;
-	charSpan.innerText = charCount;
-	if (charCount > maxContent) {
-		document.querySelector(".submit").disabled = true;
-		charSpan.style.color = "var(--error)";
-	} else if (charCount <= maxContent && charCount > 0) {
-		if (document.querySelector(".submit").disabled) {
-			document.querySelector(".submit").removeAttribute("disabled");
-			charSpan.removeAttribute("style");
-		}
-	} else if (charCount === 0) {
-		document.querySelector(".submit").disabled = true;
+export class Key {
+	constructor(iv, salt, algorithm) {
+		this.iv = iv ?? window.crypto.getRandomValues(new Uint8Array(12));
+		this.algorithm = algorithm ?? {
+			name: "AES-GCM",
+			length: 256,
+		};
+		this.subtle = window.crypto.subtle;
+		this.salt = salt ?? window.crypto.getRandomValues(new Uint8Array(16));
+		this.encoder = new TextEncoder();
 	}
-}
 
-async function submitPaste(content) {
-	const submitBtn = document.querySelector(".submit");
+	async generate() {
+		this.key = this.subtle.generateKey(this.algorithm, true, [
+			"encrypt",
+			"decrypt",
+		]);
+		return this.key;
+	}
+	async derive(material) {
+		const algorithm = {
+			name: "PBKDF2",
+			hash: "SHA-256",
+			salt: this.salt,
+			iterations: 100000,
+		};
+		// console.log(this.salt);
+		const derived = await this.subtle.deriveKey(
+			algorithm,
+			material,
+			{ name: "AES-GCM", length: 256 },
+			true,
+			["wrapKey", "unwrapKey"],
+		);
+		return derived;
+	}
 
-	if (content.length <= maxContent) {
-		const enc = await encryptData(content);
-		content = enc.data;
-		console.log(content);
-		submitBtn.disabled = true;
-		const req = await fetch("/submit", {
-			method: "PUT",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ content: content }),
+	// import a key, only used with password generation
+	async importKey(key, name = "AES-GCM", params) {
+		// console.log(key, name, params);
+		const imported = await this.subtle.importKey(
+			"raw",
+			key,
+			name,
+			true,
+			params,
+		);
+		this.key = imported;
+		return imported;
+	}
+
+	// generate a key from a string password
+	async generatePassword(pw) {
+		const keyMaterial = await this.importKey(
+			this.encoder.encode(pw),
+			{ name: "PBKDF2" },
+			["deriveKey"],
+		);
+		const generated = await this.derive(keyMaterial);
+		this.key = generated;
+		return generated;
+	}
+
+	async exportKey(key) {
+		const exported = await this.subtle.exportKey("raw", key);
+		// console.log(exported, "exported key");
+		this.exported = exported;
+		return exported;
+	}
+
+	// unwrap/wrap a key, these should be used alongside those generated from passwords
+
+	async unwrap(wrapper, key) {
+		const format = "raw";
+		// console.log(`this iv is ${this.iv} `, this.iv);
+		// console.log(key, wrapper, this.iv, "yoo");
+		return await this.subtle.unwrapKey(
+			"raw",
+			key,
+			wrapper,
+			{
+				name: "AES-GCM",
+				iv: this.iv,
+			},
+			"AES-GCM",
+			true,
+			["encrypt", "decrypt"],
+		);
+	}
+
+	async wrap(wrapper, key) {
+		const format = "raw";
+		// console.log(`this iv is ${this.iv}`);
+		return await this.subtle.wrapKey("raw", key, wrapper, {
+			name: "AES-GCM",
+			iv: this.iv,
 		});
-		if (req.ok) {
-			submitBtn.style.borderColor = "var(--success)";
-			const identifier = (await req.json()).identifier;
-			setTimeout(() => {
-				submitBtn.removeAttribute("style");
-				submitBtn.removeAttribute("disabled");
-				intermissal(identifier, enc.decryption, enc.iv);
-			}, 1000);
-		} else {
-			submitBtn.style.borderColor = "var(--error)";
-			alert("failed to submit");
-			setTimeout(() => {
-				submitBtn.removeAttribute("style");
-				submitBtn.removeAttribute("disabled");
-			}, 2000);
-		}
 	}
 }
 
-function intermissal(identifier, privkey, iv) {
-	document.getElementById("bin").style.alignContent = "center";
-	document.getElementById("bin").innerHTML =
-		"successfully submitted. you can find your paste at " +
-		`<a href="/p/${identifier}#${privkey}&${iv}">https://${window.location.host}/p/${identifier}#${privkey}&${iv}`;
+export class Cypher {
+	constructor(key, iv) {
+		this.key = key;
+		this.iv = iv ?? window.crypto.getRandomValues(new Uint8Array(12));
+		this.algorithm = {
+			name: "AES-GCM",
+			iv: this.iv,
+		};
+		this.crypto = window.crypto;
+		this.subtle = window.crypto.subtle;
+	}
+	async decrypt(data) {
+		// console.log(this.key, this.algorithm, data);
+		return await this.subtle.decrypt(this.algorithm, this.key, data);
+	}
+
+	async encrypt(data) {
+		// console.log(this.key, this.algorithm, data);
+		return {
+			data: await this.subtle.encrypt(this.algorithm, this.key, data),
+			iv: this.iv,
+		};
+	}
 }
 
-// encryption
+// (async () => {
+// 	encryptKey("123", await encryptData("yaa"));
+// })();
 
-async function encryptData(data) {
-	const crypto = window.crypto.subtle;
-	const decode = new TextDecoder();
-	const b64 = new ArrayBuffer(data.length);
+// (async () => {
+// 	encryptData("mhm");
+// })();
 
-	let bytes = new Uint8Array(b64);
-	const nonce = window.btoa(self.crypto.randomUUID());
-	for (let i = 0; i < data.length; i++) {
-		bytes[i] = data.charCodeAt(i);
-	}
-	data = bytes.buffer;
-
-	console.log(decode.decode(data), data);
-
-	const algorithm = {
-		name: "AES-GCM",
-		length: 256,
-		// publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
-		// hash: "SHA-512",
-	};
-	const iv = window.crypto.getRandomValues(new Uint8Array(12));
-	const algoParams = {
-		name: "AES-GCM",
-		iv: iv,
-	};
-	console.log(algoParams);
-	const key = await crypto.generateKey(algorithm, true, ["encrypt", "decrypt"]);
-	console.log(key);
-	const encrypted = await crypto.encrypt(algoParams, key, data);
-	console.log(encrypted, "encrypted data");
-	console.log(decode.decode(encrypted));
-
-	// const d = decode.decode(encrypted);
-	console.log(await crypto.decrypt(algoParams, key, encrypted), "mhm");
-	const decrypted = decode.decode(
-		await crypto.decrypt(algoParams, key, encrypted),
-	);
-
-	// console.log()
-	const pKey = await crypto.exportKey("raw", key);
-	bytes = new Uint8Array(pKey);
+export function bytesToB64(bytes) {
 	let s = "";
 	for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
-
-	const privKey = window.btoa(s);
-	bytes = new Uint8Array(encrypted);
-	s = "";
-	for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
-	console.log(s, "THISTHISTHIS");
-	const d = window.btoa(s);
-	console.log(d, "s");
-	// console.log(window.btoa(privKey));
-	console.log(privKey, pKey, key, window.atob(privKey));
-	console.log("iv: ", iv);
-	const info = {
-		data: d,
-		decryption: privKey,
-		iv: window.btoa(iv),
-	};
-	// const privKey = key.privateKey;
-	// console.log("PRIVKEY: ", privKey);
-	// console.log(window.btoa((await crypto.exportKey("jwk", privKey)).d));
-	return info;
+	return window.btoa(s);
 }
 
-encryptData("rawr");
+export function b64ToBytes(b64) {
+	const bin = window.atob(b64);
+	const out = new Uint8Array(bin.length);
+	for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+	return out;
+}
+
+export function bufferToB64(h) {
+	let bytes = new Uint8Array(h);
+	let s = "";
+	for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+	return window.btoa(s);
+}
+
+export async function createUintArray(text) {
+	return await Uint8Array.from(text, (c) => c.charCodeAt(0));
+}
+export async function createBuffer(text) {
+	return await (
+		await Uint8Array.from(text, (c) => c.charCodeAt(0))
+	).buffer;
+}
+export function toUuint(key) {}
+
+// document.addEventListener("DOMContentLoaded", queryPassword);
+// encryptData("rawr");

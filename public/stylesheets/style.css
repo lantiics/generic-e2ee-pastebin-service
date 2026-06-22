@@ -1,8 +1,8 @@
 :root {
 	--url-color: #8c8c8c;
 	--green: oklch(89.944% 0.19865 144.318);
-	--error: oklch(66.355% 0.22314 25.711);
-	--success: hsl(126, 38%, 43%);
+	--error: #4d3434;
+	--success: #344d34;
 	--caution: #c2af8e;
 	--informatory: hsl(232, 77%, 63%);
 	--border-hover: #a5aeff;
@@ -45,7 +45,9 @@ main {
 	margin: auto;
 
 	display: grid;
-	width: 45%;
+	width: 70rem;
+	max-width: 99%;
+	min-width: 45%;
 	min-height: 92dvh;
 
 	.content {
@@ -56,6 +58,10 @@ main {
 		border-radius: var(--brad);
 		/* border: 2px solid var(--secondary-container); */
 		/* background-color: var(--primary-container); */
+	}
+	@media only screen and (max-width: 600px) {
+		width: 99%;
+		min-width: unset;
 	}
 }
 
@@ -107,13 +113,13 @@ a {
 
 .user {
 	max-width: 100%;
+
 	overflow-wrap: anywhere;
 	margin: auto;
 
 	gap: 0.5em;
 	background-color: var(--primary-container);
 
-	min-height: 30vh;
 	border-radius: var(--secondary-brad);
 	border: 1px groove;
 	border-color: var(--secondary-container);
@@ -123,6 +129,7 @@ a {
 	&:is(#bin) {
 		display: grid;
 		justify-items: center;
+		text-align: center;
 	}
 	&:hover {
 		border-color: color-mix(in hsl, var(--primary-container) 75%, white 35%);
@@ -130,6 +137,7 @@ a {
 	button {
 		background-color: var(--secondary-container);
 	}
+
 	/* grid-template-columns: auto; */
 }
 
@@ -140,14 +148,128 @@ a {
 	align-items: center;
 }
 
+.popup-container {
+	width: 100vw;
+	/* overflow-wrap: anywhere; */
+	/* margin: auto; */
+
+	/* gap: 0.5em; */
+
+	height: 100vh;
+
+	display: grid;
+	backdrop-filter: brightness(50%);
+	/* justify-content: center;place-items: var(--primary-container); */
+	position: fixed;
+	align-content: center;
+	z-index: 1000;
+	&:is(.pp) {
+		background-color: #000;
+		backdrop-filter: brightness(0%);
+	}
+
+	/* display: block; */
+	/* grid-template-columns: auto; */
+}
+.popup {
+	width: 30vw;
+	/* overflow-wrap: anywhere; */
+	margin: auto;
+
+	/* gap: 0.5em; */
+	background-color: var(--primary-container);
+	display: grid;
+	min-height: 20vh;
+	border-radius: var(--secondary-brad);
+	text-align: center;
+	padding: 1em;
+	gap: 2em;
+	border: 1px groove;
+	font-size: large;
+	grid-auto-flow: row;
+	justify-items: center;
+	border-color: var(--secondary-container);
+	transition: border-color 200ms;
+	/* position: absolute; */
+	/* justify-self: center; */
+	/* z-index: 1000; */
+	/* position: relative; */
+	/* display: block; */
+	&:hover {
+		border-color: color-mix(in hsl, var(--primary-container) 75%, white 35%);
+	}
+
+	button {
+		background-color: var(--secondary-container);
+	}
+
+	@media only screen and (max-width: 600px) {
+		width: 80vw;
+		gap: 1em;
+	}
+	/* grid-template-columns: auto; */
+}
+
+.popup-btm {
+	display: grid;
+	grid-auto-flow: column;
+	justify-self: right;
+	gap: 2em;
+	button {
+		width: 100%;
+		padding-block: 2px;
+	}
+	&:is(.pp) {
+		justify-self: unset;
+	}
+}
+
+.switch:is(button) {
+	--c: var(--error);
+	background-color: color-mix(
+		in hsl,
+		var(--secondary-container) 70%,
+		var(--c) 30%
+	);
+	border-color: var(--c);
+}
+
+input {
+	resize: none;
+
+	/* font-weight: bold; */
+	padding: 0.5em;
+	color: var(--text-main);
+	/* border-radius: var(--secondary-brad); */
+	background: none;
+	font-family: "Google Sans Code";
+	border: 1px groove;
+	border-color: var(--secondary-container);
+	outline: none;
+	width: 100%;
+	transition: border-color 200ms;
+	&:hover {
+		border-color: color-mix(in hsl, var(--primary-container) 75%, white 35%);
+	}
+	&:focus {
+		border-color: color-mix(in hsl, var(--primary-container) 35%, white 65%);
+	}
+	&:is(.number) {
+		width: 8em;
+		/* background-color: red; */
+		padding: 0.1em;
+	}
+}
+
 .charcount {
 	justify-self: left;
 }
 
 textarea {
 	resize: none;
-	min-height: 30vh;
+	min-height: 18rem;
 	/* font-weight: bold; */
+	height: auto;
 	padding: 0.5em;
 	color: var(--text-main);
 	/* border-radius: var(--secondary-brad); */
@@ -187,10 +309,15 @@ button {
 		}
 	}
 	&:is(.submit) {
+		background-color: color-mix(
+			in hsl,
+			var(--secondary-container) 75%,
+			var(--informatory) 25%
+		);
 		justify-self: right;
 	}
-}
-
-fieldset input {
-	margin: auto;
+	@media only screen and (max-width: 600px) {
+		font-size: x-small;
+		padding: 4px;
+	}
 }

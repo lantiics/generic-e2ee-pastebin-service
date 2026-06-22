@@ -1,71 +1,125 @@
+import {
+	Key,
+	Cypher,
+	bufferToB64,
+	bytesToB64,
+	createUintArray,
+	b64ToBytes,
+	createBuffer,
+} from "./main.js";
+
 async function decryptPaste() {
 	try {
-		const text = document.getElementById("text").innerText;
-		document.getElementById("text").style.display = "unset";
-		document.getElementById("text").innerText =
-			"decrypting data. this should show an error if the action is unsuccessful.";
-		console.log(window.atob(text));
-		console.log(text, window.atob(text));
-		const cypher = Uint8Array.from(window.atob(text), (c) =>
-			c.charCodeAt(0),
-		).buffer;
-		const info = await getPrivkey();
-		const key = info.key;
+		const text = document.getElementById("text");
+		const content = document
+			.querySelector("meta[name='data']")
+			.getAttribute("content");
+		const passwordStatus =
+			document.querySelector("meta[name='pw']")?.getAttribute("content") ===
+				"1" ?? null;
+		const data_iv = document
+			.querySelector("meta[name='data_iv']")
+			.getAttribute("content");
+		if (!passwordStatus) {
+			const keyB64 = location.hash.replace("#", "");
+			const key = new Key();
+			console.log("no password required, continuing");
+			const keyData = b64ToBytes(keyB64);
+			await key.importKey(keyData, "AES-GCM", ["encrypt", "decrypt"]);
+			const privKey = key.key;
+			const iv = await new Uint8Array(atob(data_iv).split(","));
 
-		const iv = info.iv;
-		console.log(iv, "iv info");
-		const params = {
-			name: "AES-GCM",
-			iv: iv,
-		};
-		console.log(cypher, "");
-		const plaintext = await decrypt(params, key, cypher);
+			const contentData = await b64ToBytes(content);
 
-		if (plaintext !== 0) {
-			document.getElementById("text").innerText = plaintext;
+			const cypher = new Cypher(privKey, iv);
+			const decypher = atob(
+				await bufferToB64(await cypher.decrypt(contentData)),
+			);
+			console.log(decypher);
+			text.innerText = decypher;
 		} else {
-			document.getElementById("text").innerText = "failed to decrypt data";
+			console.log("password required, prompting user");
+			const password = location.hash.replace("#", "");
+
+			const salt = document
+				.querySelector("meta[name='psw_salt']")
+				.getAttribute("content");
+			const psw_iv = document
+				.querySelector("meta[name='psw_iv']")
+				.getAttribute("content");
+			// console.log(psw_iv);
+
+			// console.log(salt, "salt");
+			// const data_iv = document
+			// 	.querySelector("meta[name='data_iv']")
+			// 	.getAttribute("content");
+			const ps = await doPassword(password, salt, psw_iv);
+
+			if (ps != 0) {
+				// console.log("WOO");
+				const cypher = new Cypher(ps, new Uint8Array(atob(data_iv).split(",")));
+				const decrypt = new TextDecoder().decode(
+					await cypher.decrypt(b64ToBytes(content)),
+				);
+				if (decrypt) {
+					text.innerText = decrypt;
+					text.style.display = "block";
+					document.getElementById("popup-container").style.display = "none";
+				}
+			}
 		}
-		document.getElementById("text").style.display = "unset";
 	} catch (e) {
 		document.getElementById("text").style.display = "unset";
 		document.getElementById("text").innerText = "failed to decrypt data";
+		document.querySelector(".date").innerText += " - decryption failed";
+		console.error(e);
 	}
 }
 
-async function getPrivkey() {
-	const crypto = window.crypto.subtle;
-	const hash = location.hash.replace("#", "");
-	const key = window.atob(hash.split("&")[0]);
-	let iv = window.atob(hash.split("&")[1]);
-	iv = iv.split(",");
-	const decoder = new TextDecoder();
-	// console.log(new TextDecoder().decode(ascii));
+function togglePw() {
+	usepw = !usepw;
 
-	// console.log(key, iv);
-	console.log(key);
-	const keyBytes = Uint8Array.from(key, (c) => c.charCodeAt(0));
-	const ivBytes = new Uint8Array(iv);
-
-	console.log(ivBytes, "ivbytes");
-	// const keyBytes = Uint8Array.from(key, (c) => c.charCodeAt(0));
-	const length = keyBytes.length * 8;
-	console.log(decoder.decode(keyBytes));
-	const privKey = await crypto.importKey(
-		"raw",
-		keyBytes,
-		{ name: "AES-GCM", length },
-		false,
-		["encrypt", "decrypt"],
-	);
-	return { key: privKey, iv: ivBytes };
+	document.getElementById("pwbtn").style.borderColor = usepw
+		? "var(--success)"
+		: "var(--error)";
 }
 
-async function decrypt(algorithm, privKey, cypher) {
-	const crypto = window.crypto.subtle;
-	const decoder = new TextDecoder();
-	console.log(algorithm, privKey, cypher);
-	return decoder.decode(await crypto.decrypt(algorithm, privKey, cypher));
+async function doPassword(password, salt, psw_iv) {
+	const btn = document.getElementById("password");
+	const h = document.getElementById("popup");
+	const container = document.getElementById("popup-container");
+	const pw = document.getElementById("password");
+	const submit = document.getElementById("pw-submit");
+	// console.log(salt);
+
+	return new Promise((resolve, reject) => {
+		submit.addEventListener("click", handleCheck);
+		async function handleCheck() {
+			submit.innerText = "attempting...";
+			const test = await testPassword(pw.value, salt, psw_iv, password);
+			if (test != 0) {
+				submit.removeEventListener("click", handleCheck);
+				submit.innerText = "successful";
+				return resolve(test);
+			} else {
+				submit.innerText = "failed";
+			}
+		}
+	});
+}
+
+async function testPassword(pw, salt, psw_iv, enc) {
+	try {
+		salt = b64ToBytes(salt);
+
+		psw_iv = b64ToBytes(psw_iv);
+		const key = new Key(psw_iv, salt);
+		await key.generatePassword(pw);
+		return await key.unwrap(await key.key, await createBuffer(atob(enc)));
+	} catch (e) {
+		console.error(e);
+		return 0;
+	}
 }
 
 document.addEventListener("DOMContentLoaded", decryptPaste);
