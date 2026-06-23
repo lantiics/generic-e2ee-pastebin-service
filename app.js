@@ -194,7 +194,7 @@ setInterval(clearExpired, 15 * 1000);
 
 async function clearExpired() {
 	db.exec(
-		`DELETE FROM entries WHERE (((epoch + (1*1000*60*60*3)) - ${Date.now()})/(1*1000*60*60*3) > 1)`,
+		`DELETE FROM entries WHERE epoch < (strftime('%s', 'now', '-3 hours') * 1000)`,
 	);
 }
 
