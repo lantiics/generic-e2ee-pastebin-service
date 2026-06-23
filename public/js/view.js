@@ -17,9 +17,9 @@ async function decryptPaste() {
 		const passwordStatus =
 			document.querySelector("meta[name='pw']")?.getAttribute("content") ===
 				"1" ?? null;
-		const data_iv = await (await fetch("?iv=1")).text();
-		console.log(data_iv);
+
 		if (!passwordStatus) {
+			const data_iv = await (await fetch("?iv=1")).text();
 			const keyB64 = location.hash.replace("#", "");
 			const key = new Key();
 			console.log("no password required, continuing");
@@ -55,6 +55,7 @@ async function decryptPaste() {
 			const ps = await doPassword(password, salt, psw_iv);
 
 			if (ps != 0) {
+				const data_iv = await (await fetch("?iv=1")).text();
 				// console.log("WOO");
 				const cypher = new Cypher(ps, new Uint8Array(atob(data_iv).split(",")));
 				const decrypt = new TextDecoder().decode(
