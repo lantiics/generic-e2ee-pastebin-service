@@ -193,7 +193,7 @@ function b64ToBytes(b64) {
 setInterval(clearExpired, 15 * 1000);
 
 async function clearExpired() {
-	db.prepare(
+	db.exec(
 		`DELETE FROM entries WHERE (((epoch + (1*1000*60*60*3)) - ${Date.now()})/(1*1000*60*60*3) > 1)`,
 	);
 }
