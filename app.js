@@ -25,7 +25,7 @@ app.set("trust proxy", true);
 app.use("/", express.static(path.join(__dirname, `public/`)));
 
 app.listen(port, () => {
-	console.log(`Example app listening on port ${port}`);
+	console.log(`Webserver initialized on port ${port}`);
 });
 
 // setup
@@ -134,52 +134,63 @@ async function generateIdentifier(epoch, content) {
 
 app.get("/p/:identifier", async (req, res, next) => {
 	const identifier = req.params.identifier;
-	const data = db
-		.prepare("SELECT * FROM entries WHERE identifier = ?")
-		.get(identifier);
-	if (data) {
-		res.locals.content = data.content;
+	if (!req.query.iv ?? null) {
+		const data = db
+			.prepare("SELECT * FROM entries WHERE identifier = ?")
+			.get(identifier);
+		if (data) {
+			res.locals.content = data.content;
 
-		res.locals.date =
-			[
-				"January",
-				"February",
-				"March",
-				"April",
-				"May",
-				"June",
-				"July",
-				"August",
-				"September",
-				"October",
-				"November",
-				"December",
-			][new Date(Math.floor(data.epoch)).getUTCMonth()] +
-			" " +
-			new Date(Math.floor(data.epoch)).getUTCDate() +
-			" " +
-			new Date(Math.floor(data.epoch)).getUTCFullYear() +
-			" UTC";
-		const diff = data.epoch + 1 * 1000 * 60 * 60 * 3 - Date.now();
-		const minutes = Math.floor((diff / 1000 / 60) % 60);
-		const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-		res.locals.expires = `${hours} hour${hours === 1 ? "" : "s"} and ${minutes} minute${minutes === 1 ? "" : "s"}`;
-		res.locals.password = data.password;
-		res.locals.content_iv = data.content_iv;
-		if (res.locals.password) {
-			res.locals.psw_salt = data.psw_salt;
-			res.locals.psw_iv = data.psw_iv;
+			res.locals.date =
+				[
+					"January",
+					"February",
+					"March",
+					"April",
+					"May",
+					"June",
+					"July",
+					"August",
+					"September",
+					"October",
+					"November",
+					"December",
+				][new Date(Math.floor(data.epoch)).getUTCMonth()] +
+				" " +
+				new Date(Math.floor(data.epoch)).getUTCDate() +
+				" " +
+				new Date(Math.floor(data.epoch)).getUTCFullYear() +
+				" UTC";
+			const diff = data.epoch + 1 * 1000 * 60 * 60 * 3 - Date.now();
+			const minutes = Math.floor((diff / 1000 / 60) % 60);
+			const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+			res.locals.expires = `${hours} hour${hours === 1 ? "" : "s"} and ${minutes} minute${minutes === 1 ? "" : "s"}`;
+			res.locals.password = data.password;
+			res.locals.content_iv = data.content_iv;
+			if (res.locals.password) {
+				res.locals.psw_salt = data.psw_salt;
+				res.locals.psw_iv = data.psw_iv;
 
-			res.locals.data = data.content;
+				res.locals.data = data.content;
+			}
+			if (data.delete_upon_view === 1) {
+				res.locals.oneTimeUse = true;
+			}
+			// add deletion function
+			return res.render("entry");
 		}
-		if (data.delete_upon_view === 1) {
+		return next();
+	} else {
+		const iv = db
+			.prepare(
+				`SELECT content_iv, delete_upon_view FROM entries WHERE identifier = ?`,
+			)
+			.get(identifier);
+		if (iv.delete_upon_view === 1) {
 			db.prepare(`DELETE FROM entries WHERE identifier = ?`).run(identifier);
-			res.locals.oneTimeUse = true;
 		}
-		// add deletion function
-		return res.render("entry");
+		res.send(iv.content_iv);
 	}
-	return next();
 });
 function b64ToBytes(b64) {
 	const bin = atob(b64);
@@ -191,7 +202,7 @@ function b64ToBytes(b64) {
 // expiration - all entries expire after 3 hours
 
 setInterval(clearExpired, 15 * 1000);
-
+clearExpired();
 async function clearExpired() {
 	db.exec(
 		`DELETE FROM entries WHERE epoch < (strftime('%s', 'now', '-3 hours') * 1000)`,

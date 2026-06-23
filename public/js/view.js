@@ -17,9 +17,8 @@ async function decryptPaste() {
 		const passwordStatus =
 			document.querySelector("meta[name='pw']")?.getAttribute("content") ===
 				"1" ?? null;
-		const data_iv = document
-			.querySelector("meta[name='data_iv']")
-			.getAttribute("content");
+		const data_iv = await (await fetch("?iv=1")).text();
+		console.log(data_iv);
 		if (!passwordStatus) {
 			const keyB64 = location.hash.replace("#", "");
 			const key = new Key();
