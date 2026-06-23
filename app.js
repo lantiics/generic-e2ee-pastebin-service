@@ -202,7 +202,6 @@ function b64ToBytes(b64) {
 // expiration - all entries expire after 3 hours
 
 setInterval(clearExpired, 15 * 1000);
-clearExpired();
 async function clearExpired() {
 	db.exec(
 		`DELETE FROM entries WHERE epoch < (strftime('%s', 'now', '-3 hours') * 1000)`,
