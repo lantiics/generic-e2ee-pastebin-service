@@ -69,7 +69,7 @@ async function submitPaste(content) {
 			if (pw && pw != 0) {
 				try {
 					const encryption = await encryptData(content, pw);
-					console.log(encryption, "this");
+					// console.log(encryption, "this");
 
 					await submit(encryption);
 

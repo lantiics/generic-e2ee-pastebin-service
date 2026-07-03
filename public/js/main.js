@@ -42,7 +42,7 @@ export class Key {
 			"raw",
 			key,
 			name,
-			true,
+			false,
 			params,
 		);
 		this.key = imported;
