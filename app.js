@@ -10,7 +10,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 var createError = require("http-errors");
 const { rateLimit } = require("express-rate-limit");
-
 const limiter = rateLimit({
 	windowMs: 1 * 60 * 1000, // 1 minute
 	limit: 3,
@@ -31,17 +30,18 @@ app.listen(port, () => {
 // setup
 
 // add 28 to account for encryption overhead
-
 const maxContent = 8000 + 28;
 
-console.log("initializing entry database");
-const db = new Database("./bin.db");
+const dbLocation = "./tpaste.db";
+
+console.log("initializing entry database at " + dbLocation);
+const db = new Database(dbLocation);
 
 db.exec(
 	`CREATE TABLE IF NOT EXISTS entries (epoch BIGINT NOT NULL, content TEXT NOT NULL, identifier TEXT UNIQUE NOT NULL, password BOOLEAN DEFAULT 0, psw_salt TEXT, psw_iv TEXT, content_iv TEXT, delete_upon_view BOOLEAN)`,
 );
 
-console.log("database initialized");
+console.log("database initialized at " + dbLocation);
 
 // submission logic
 

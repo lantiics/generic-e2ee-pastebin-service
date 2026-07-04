@@ -1,7 +1,7 @@
 {
   "scripts": {
     "start": "PORT=3010 pm2 start app.js",
-    "dev": "PORT=8000 nodemon run app.js",
+    "dev": "PORT=8002 nodemon run app.js",
     "restart": "pm2 restart app",
     "delete": "pm2 delete app"
   },
